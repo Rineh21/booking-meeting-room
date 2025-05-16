@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="icon" href="data:," />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meeting Room Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@5.10.1/main.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="https://static.virtubox.io/catalog/file/20250206-050215-qanc-image.png"
+      type="image/x-icon"
+    />
+    <style>
+        body {
+    margin: 0;
+    padding: 20px;
+    height: 100vh;
+    overflow: hidden;
+    font-family: poppins;
+    font-size: 15px;
+    font-weight: 700;
+    background: #f5f6f8;
+  }
+
+      .screen {
+        display: none;
+      }
+      .active {
+        display: block;
+      }
+      .main-container {
+    height: calc(100vh - 40px);
+    display: flex;
+    gap: 20px;
+  }
+      .left-panel {
+        flex: 3; /* Take 75% of space */
+        min-width: 0; /* Allow shrinking */
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto; /* Add scroll if needed */
+      }
+
+      .right-panel {
+        flex: 1; /* Take 25% of space */
+        max-width: 30%; /* Prevent growing too wide */
+        min-width: 0; /* Allow shrinking */
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto; /* Add scroll if needed */
+      }
+
+      .header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .room-name {
+        font-size: 32px;
+        color: #1a73e8;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .datetime {
+        color: #5f6368;
+        font-size: 16px;
+        margin-top: 8px;
+      }
+
+      .status-box {
+        padding: 32px;
+        border-radius: 12px;
+        margin: 20px 0;
+        text-align: center; /* Center align text */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Vertical center */
+        align-items: center; /* Horizontal center */
+        min-height: 200px; /* Ensure consistent height */
+      }
+      .available .status-text {
+        color: #137333;
+        font-size: 36px;
+        font-weight: 500;
+      }
+      .occupied .status-text {
+        color: #c5221f;
+      }
+
+      .available {
+        background-color: #d4edda;
+        border-color: #81c995;
+      }
+      .occupied {
+        background-color: #f8d7da;
+        border-color: #f28b82;
+      }
+      .status-text {
+        font-size: 3em;
+        margin: 0 0 15px 0; /* Add spacing between text and timer */
+      }
+      .timer {
+        color: #5f6368;
+        font-size: 20px;
+        margin-top: 0; /* Remove previous margin */
+      }
+
+      .booking-info {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 25px 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+      .booking-info h3 {
+        color: #1a73e8; /* Blue header text */
+        margin: 0 0 15px 0;
+        font-size: 18px;
+        border-bottom: 1px solid #d3e3fd; /* Subtle light blue divider */
+        padding-bottom: 12px;
+      }
+
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .book-now {
+        background: #15437e;
+        padding: 14px 32px;
+        border: 2px  #1a73e8;
+        box-sizing:border-box;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+        
+      }
+      .book-now:hover {
+        background: #26528b;
+        transform: translateY(-1px);
+      }
+
+      .schedule-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      .schedule-header h2 {
+        color: #1a73e8;
+        font-size: 20px;
+        margin: 0;
+      }
+
+      .calendar-icon {
+        color: #5f6368;
+        cursor: pointer;
+        font-size: 24px;
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+      .calendar-icon:hover {
+        background: #f8f9fa;
+      }
+
+      .schedule-container {
+        flex: 1;
+        height: 100%; /* Fill available height */
+        overflow-y: auto;
+        border: 2px solid #eee;
+        min-height: 0; /* Allow shrinking */
+        border-color: #1a73e8;
+
+        border-radius: 8px;
+        padding: 15px;
+      }
+      .time-labels {
+        width: 80px;
+        padding-right: 10px;
+        float: left;
+      }
+      .time-label {
+        color: #5f6368;
+        font-size: 13px;
+        height: 60px;
+      }
+      .timeline {
+        background: repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 59px,
+          #f8f9fa 60px
+        );
+        border-left: 1px solid #e0e0e0;
+      }
+
+      .meeting-block {
+        position: absolute;
+        background-color: #f17575;
+        border-left: 3px solid #ec4b3c;
+        width: 98%;
+        padding: 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        box-sizing: border-box;
+        transition: transform 0.2s;
+      }
+      .meeting-block:hover {
+        transform: scale(1.01);
+        background-color: #f44b4b;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        max-width: 90%;
+        /* max-height: 340px; */
+        width: 800px;
+        height: 80vh;
+      }
+      .modal.active {
+        display: block;
+      }
+      #calendar {
+        flex: 1;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        height: 100% !important; /* Changed from fixed height */
+      }
+
+      .fc-daygrid-day-frame {
+        min-height: 3em !important;
+        padding: 2px !important;
+      }
+
+      .fc .fc-daygrid-day-top {
+        flex-direction: row !important;
+        padding: 2px !important;
+      }
+      .fc-event-time {
+        display: none;
+      }
+      .fc-event-title {
+        font-size: 0.7em !important;
+        padding: 1px !important;
+      }
+      .fc-toolbar-title {
+        font-size: 1.2em !important;
+      }
+      .fc-button {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.8rem !important;
+      } /* Updated Calendar Modal Styles */
+      #calendarModal {
+        width: 95%;
+        height: auto;
+        padding: 20px;
+        max-width:fit-content;
+      }
+
+
+      .fc-header-toolbar {
+        padding: 0.5rem 0.5rem !important;
+        margin: 0 0 0.5rem 0 !important;
+      }
+
+      #calendarModal .fc-toolbar-chunk {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .fc-toolbar-title {
+        font-size: 1.1rem !important;
+        margin: 0 10px !important;
+      }
+
+      .fc-button-primary {
+        background-color: #1a73e8 !important;
+        border-color: #1a73e8 !important;
+      }
+      .fc-button-primary:disabled {
+        background-color: #90caf9 !important;
+        border-color: #90caf9 !important;
+      }
+
+      .fc-daygrid-day {
+        padding: 0.5rem !important;
+        border-color: #f0f0f0 !important;
+      }
+
+      .fc-day-today {
+        background-color: #e8f0fe !important;
+      }
+
+      .fc-daygrid-event {
+        background-color: #ff5252 !important;
+        border-color: #ff5252 !important;
+        border-radius: 4px;
+        padding: 2px 5px;
+      }
+
+      .fc-daygrid-event-dot {
+        display: none !important;
+      }
+
+      .fc-event-title {
+        color: white !important;
+        font-size: 0.9em;
+      }
+
+      .fc-daygrid-day-number {
+        font-size: 0.9rem;
+        color: #5f6368;
+        font-weight: 500;
+      }
+
+      .fc-daygrid-day:hover {
+        background-color: #f5f5f5 !important;
+      }
+
+      .fc-day-past {
+        background-color: #fafafa;
+      }
+
+      .fc-daygrid-event-harness {
+        margin-top: 2px;
+      }
+
+      .meeting-badge {
+        background-color: #ff5252;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+      }
+
+      #calendarModal .fc-prev-button,
+      #calendarModal .fc-next-button {
+        background-color: #2196f3 !important;
+        border: none !important;
+        padding: 8px 12px !important;
+      }
+
+      /* Rest of previous styles remain unchanged */
+      /* ... (keep all previous styles from original code) ... */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        transition: background-color 0.3s;
+      }
+
+      .screen {
+        display: none;
+      }
+      .active {
+        display: block;
+      }
+
+      .header {
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .room-name {
+        font-size: 2.5em;
+        margin: 0;
+      }
+      .datetime {
+        color: #666;
+      }
+
+      .status-box {
+        padding: 32px;
+        border-radius: 12px;
+        margin: 20px 0;
+        border: 2px solid; /* Added base border style */
+      }
+      .available .status-text {
+        color: #155724;
+      }
+
+      .occupied .status-text {
+        color: #721c24;
+      }
+      .available {
+        background-color: #d4edda;
+        border-color: #81c995;
+      }
+      .occupied {
+        background-color: #f8d7da;
+        border-color: #f28b82;
+      }
+      .status-text {
+        font-size: 3em;
+        margin: 0;
+      }
+      .timer {
+        font-size: 2em;
+        margin: 10px 0;
+      }
+
+      .booking-info {
+        background: #f0f6ff; /* Light blue background */
+        border: 2px solid #8ab4f8; /* Light blue border */
+        border-radius: 12px;
+        padding: 20px;
+        margin: 25px 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .book-now {
+        background-color: #1a73e8;
+        color: white;
+        
+      }
+
+      .schedule-container {
+        display: flex;
+        margin-top: 20px;
+      }
+      .time-labels {
+        width: 80px;
+        padding-right: 10px;
+      }
+      .time-label {
+        height: 60px;
+        text-align: right;
+        padding-right: 10px;
+        color: #666;
+        border-bottom: 1px solid #eee;
+      }
+      .timeline {
+        flex: 1;
+        position: relative;
+        min-width: 200px; /* Minimum reasonable width */
+
+        height: 1440px;
+        background: repeating-linear-gradient(
+          to bottom,
+          #f8f9fa 0,
+          #f8f9fa 59px,
+          #fff 60px
+        );
+      }
+      .meeting-block {
+        position: absolute;
+        background-color: #f17575;
+        border-left: 3px solid #ec4b3c;
+        width: 98%;
+        padding: 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        box-sizing: border-box;
+        transition: transform 0.2s;
+      }
+      .meeting-block:hover {
+        transform: scale(1.01);
+        background-color: #f44b4b;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        max-width: 400px;
+      }
+      .modal.active {
+        display: block;
+      }
+      .modal h3 {
+        margin-top: 0;
+        color: #2196f3;
+      }
+      .modal p {
+        margin: 10px 0;
+      }
+      .modal button {
+        background-color: #2196f3;
+        color: white;
+        float: right;
+      }
+
+      .booking-form {
+    border: 2px solid #1a73e8; /* Add blue border */
+    border-radius: 12px; /* Match other elements' rounded corners */
+    padding: 20px; /* Add some inner spacing */
+    margin: 20px auto; /* Center the form */
+    background: white; /* Add white background for better contrast */
+    max-width: 400px; /* Maintain existing max-width */
+    box-sizing: border-box; /* Include border in width calculation */
+    
+}
+      .form-group {
+        margin: 10px 0;
+
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .error-message {
+        color: #dc3545;
+        font-size: 0.9em;
+        margin-top: 5px;
+        display: none;
+      }
+      #recaptcha-container {
+        display: none;
+      }
+      .meeting-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .edit-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+      .delete-btn {
+        background-color: #dc3545;
+        color: white;
+      }
+      #meetingModal p {
+        margin: 10px 0;
+        font-size: 1.1em;
+      }
+      #otpModal {
+        z-index: 1001; /* Higher than other modals */
+      }
+      #calendarModal .modal-content button {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        padding: 5px 10px;
+        color: #666;
+      }
+
+      #calendarModal .modal-content button:hover {
+        color: #333;
+      }
+      #calendarModal .modal-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Prevent content overflow */
+      }
+      /* Add this to your existing styles */
+      #bookingScreen .header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative; /* Add this for proper button positioning */
+}
+
+#bookingScreen .header h1 {
+    color: #1a73e8;
+    font-size: 2em;
+    margin: 0 auto 20px; /* Center with auto margins */
+    padding: 0;
+    display: block; /* Change from inline-block */
+    width: fit-content;
+}
+
+#bookingScreen .header button {
+    position: fixed; /* Changed from absolute */
+    right: 20px; /* Changed from left */
+    top: 20px; /* Adjusted from 50% positioning */
+    transform: none; /* Remove vertical centering */
+    margin: 0;
+    z-index: 1000; /* Ensure it stays on top */
+}
+    </style>
+  </head>
+
+  <body>
+    <!-- Main Screen -->
+    <div id="mainScreen" class="screen active">
+      <div class="main-container">
+        <div class="left-panel">
+          <div class="header">
+            <div>
+              <h1 class="room-name">Room A - Innovation Hub</h1>
+              <div class="datetime" id="currentDateTime"></div>
+            </div>
+          </div>
+
+          <div id="statusBox" class="status-box">
+            <p class="status-text" id="currentStatus"></p>
+            <div class="timer" id="timer"></div>
+          </div>
+
+          <div class="booking-info" id="nextBooking">
+            <h3>Next Booking</h3>
+            <div id="nextBookingDetails"></div>
+          </div>
+          <div>
+            <button class="book-now" onclick="showScreen('bookingScreen')">
+              Book Now
+            </button>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="schedule-header">
+            <h2>Today's Schedule</h2>
+            <span class="calendar-icon" onclick="showCalendarModal()">📅</span>
+          </div>
+          <div class="schedule-container">
+            <div class="time-labels"></div>
+            <div class="timeline" id="timeline"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div id="calendarModal" class="modal">
+        <div class="modal-content">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <h2>Meeting Calendar</h2>
+            <button onclick="closeCalendarModal()" style="margin: 0">✕</button>
+          </div>
+          <div id="calendar"></div>
+        </div>
+      </div>
+    <!-- Booking Screen -->
+    <div id="bookingScreen" class="screen">
+      <div class="header">
+        <h1>Book Your Meeting </h1>
+        <button onclick="showScreen('mainScreen')">← Back</button>
+      </div>
+
+      <form class="booking-form" onsubmit="handleBooking(event)">
+        <div class="form-group">
+          <label>Meeting Title:</label>
+          <input type="text" id="meetingTitle" required />
+        </div>
+
+        <div class="form-group">
+          <label>Start Date & Time:</label>
+          <input type="datetime-local" id="meetingStartTime" required />
+        </div>
+
+        <div class="form-group">
+          <label>End Date & Time:</label>
+          <input type="datetime-local" id="meetingEndTime" required />
+        </div>
+
+        <div class="form-group">
+          <label>Employee ID:</label>
+          <input type="text" id="employeeId" required />
+        </div>
+
+        <button type="submit" class="book-now">Confirm Booking</button>
+      </form>
+    </div>
+
+    <!-- Add OTP Verification Modal -->
+    <div id="otpModal" class="modal">
+      <div class="modal-content">
+        <h3>OTP Verification</h3>
+        <div id="recaptcha-container"></div>
+        <p id="otpMessage"></p>
+        <input type="text" id="otp" placeholder="Enter OTP" />
+        <button onclick="verifyOTP()">Verify OTP</button>
+      </div>
+    </div>
+    <div id="meetingModal" class="modal">
+      <div class="modal-content">
+        <h3 id="modalTitle"></h3>
+        <p><strong>Organizer:</strong> <span id="modalOrganizer"></span></p>
+        <p><strong>Time:</strong> <span id="modalTime"></span></p>
+        <p><strong>Duration:</strong> <span id="modalDuration"></span></p>
+        <div class="meeting-actions">
+          <button onclick="handleEditMeeting()" class="edit-btn">
+            ✏️ Edit
+          </button>
+          <button onclick="handleDeleteMeeting()" class="delete-btn">
+            🗑️ Delete
+          </button>
+          <button onclick="closeMeetingModal()">Close</button>
+        </div>
+      </div>
+    </div>
+    <!-- Rest of previous HTML remains unchanged -->
+    <!-- ... (keep all previous modal and booking screen HTML) ... -->
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <!-- Firebase scripts remain unchanged -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+    <script>
+      // Add these variables at the top
+      let selectedMeeting = null;
+      let isEditing = false;
+      let originalMeeting = null;
+
+      // Update showMeetingDetails function
+      function showMeetingDetails(meeting) {
+        selectedMeeting = meeting;
+        const modal = document.getElementById("meetingModal");
+        const duration = (meeting.end - meeting.start) / 60000;
+        document.getElementById("modalTitle").textContent = meeting.title;
+        document.getElementById("modalOrganizer").textContent =
+          meeting.organizer;
+        document.getElementById("modalTime").textContent = `${new Date(
+          meeting.start
+        ).toLocaleString()} - ${new Date(meeting.end).toLocaleString()}`;
+        document.getElementById(
+          "modalDuration"
+        ).textContent = `${duration} minutes`;
+        modal.classList.add("active");
+      }
+
+      // Add these functions
+      function closeMeetingModal() {
+        document.getElementById("meetingModal").classList.remove("active");
+        selectedMeeting = null;
+      }
+      function handleDeleteMeeting() {
+        if (!selectedMeeting) return;
+
+        const employeeId = prompt(
+          "Please enter your Employee ID to confirm deletion:"
+        );
+        if (!employeeId || !employeeDB[employeeId]) {
+          alert("Invalid Employee ID");
+          return;
+        }
+        closeMeetingModal();
+
+        if (employeeId !== selectedMeeting.employeeId) {
+          alert("Only the meeting organizer can delete this booking.");
+          return;
+        }
+
+        if (employeeId !== selectedMeeting.employeeId) {
+          alert("Only the meeting organizer can delete this booking.");
+          return;
+        }
+        if (window.recaptchaWidgetId) {
+          grecaptcha.reset(window.recaptchaWidgetId);
+        }
+
+        document.getElementById("otpMessage").innerText =
+          "Enter OTP to delete meeting";
+        tempBooking = null;
+        sendOTP(employeeDB[employeeId]);
+      }
+
+      function handleEditMeeting() {
+        if (!selectedMeeting) return;
+
+        // Populate booking form
+        document.getElementById("meetingTitle").value = selectedMeeting.title;
+        document.getElementById("employeeId").value =
+          selectedMeeting.employeeId;
+        document.getElementById("meetingStartTime").value = new Date(
+          selectedMeeting.start
+        )
+          .toISOString()
+          .slice(0, 16);
+        document.getElementById("meetingEndTime").value = new Date(
+          selectedMeeting.end
+        )
+          .toISOString()
+          .slice(0, 16);
+
+        originalMeeting = selectedMeeting;
+        isEditing = true;
+        closeMeetingModal();
+        showScreen("bookingScreen");
+      }
+      // Initialize FullCalendar
+      let calendar; // Make calendar variable global
+      document.addEventListener("DOMContentLoaded", function () {
+        const calendarEl = document.getElementById("calendar");
+        calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: "dayGridMonth",
+          headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "",
+          },
+          buttonText: {
+            today: "Today",
+            prev: "❮",
+            next: "❯",
+          },
+          fixedWeekCount: false,
+          height: "100%",
+          events: function (fetchInfo, successCallback, failureCallback) {
+            const events = roomData.schedule.map((event) => ({
+              title: event.title,
+              start: new Date(event.start),
+              end: new Date(event.end),
+              extendedProps: {
+                organizer: event.organizer,
+              },
+              display: "background",
+              color: "#ff5252",
+            }));
+            successCallback(events);
+          },
+          eventDidMount: function (info) {
+            if (info.event.display === "background") {
+              info.el.style.opacity = "0.4";
+            }
+          },
+          dayCellContent: function (arg) {
+            const hasEvents = roomData.schedule.some((event) => {
+              const eventDate = new Date(event.start);
+              return eventDate.toDateString() === arg.date.toDateString();
+            });
+
+            const dateEl = document.createElement("div");
+            dateEl.className = "fc-daygrid-day-number";
+            dateEl.textContent = arg.dayNumberText;
+
+            if (hasEvents) {
+              const badge = document.createElement("div");
+              badge.className = "meeting-badge";
+              dateEl.appendChild(badge);
+            }
+
+            return { domNodes: [dateEl] };
+          },
+        });
+        calendar.render();
+      });
+      function showCalendarModal() {
+        const modal = document.getElementById("calendarModal");
+        modal.classList.add("active");
+
+        // Refresh calendar and update size
+        setTimeout(() => {
+          calendar.updateSize();
+          calendar.refetchEvents();
+          calendar.render();
+          // Add navigation button styling
+          document
+            .querySelectorAll(".fc-prev-button, .fc-next-button")
+            .forEach((btn) => {
+              btn.style.backgroundColor = "#2196f3";
+              btn.style.color = "white";
+              btn.style.padding = "8px 12px";
+              btn.style.borderRadius = "4px";
+            });
+        }, 50);
+      }
+      function closeCalendarModal() {
+  const modal = document.getElementById("calendarModal"); // ✅ Correct quote
+  modal.classList.remove("active");
+}   // Rest of previous JavaScript remains unchanged with modifications to renderSchedule:
+      function renderSchedule() {
+        const timeline = document.getElementById("timeline");
+        const timeLabels = document.querySelector(".time-labels");
+
+        timeline.innerHTML = "";
+        timeLabels.innerHTML = "";
+
+        // Create time labels
+        for (let hour = 0; hour < 24; hour++) {
+          const timeLabel = document.createElement("div");
+          timeLabel.className = "time-label";
+          timeLabel.textContent = `${hour.toString().padStart(2, "0")}:00`;
+          timeLabels.appendChild(timeLabel);
+        }
+
+        // Create meeting blocks
+        roomData.schedule.forEach((meeting) => {
+          const block = document.createElement("div");
+          block.className = "meeting-block";
+
+          const startDate = new Date(meeting.start);
+          const endDate = new Date(meeting.end);
+
+          const startMinutes =
+            startDate.getHours() * 60 + startDate.getMinutes();
+          const durationMinutes = (endDate - startDate) / 60000;
+
+          block.style.top = `${startMinutes}px`;
+          block.style.height = `${durationMinutes}px`;
+          block.innerHTML = `
+            <strong>${meeting.title}</strong><br>
+            ${startDate.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })} - 
+            ${endDate.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+        `;
+
+          block.addEventListener("click", () => showMeetingDetails(meeting));
+          timeline.appendChild(block);
+        });
+
+        // Force calendar refresh
+        if (calendar) {
+          calendar.refetchEvents();
+          calendar.render();
+        }
+      }
+
+      // Update saveBooking function to refresh calendar
+      function saveBooking() {
+        document.getElementById("otpModal").classList.remove("active");
+        document.getElementById("bookingScreen").classList.remove("active");
+        showScreen("mainScreen");
+        updateStatus();
+        renderSchedule();
+        calendar.refetchEvents();
+        localStorage.setItem("roomData", JSON.stringify(roomData));
+
+        // Clear form fields
+        document.getElementById("meetingTitle").value = "";
+        document.getElementById("employeeId").value = "";
+        document.getElementById("meetingStartTime").value = "";
+        document.getElementById("meetingEndTime").value = "";
+        document.getElementById("otp").value = "";
+        tempBooking = null;
+      }
+      const firebaseConfig = {
+        apiKey: "AIzaSyBQDOBVuoKq-4vOKWuHSAozQUSXTc0aD30",
+        authDomain: "otpauth-9720a.firebaseapp.com",
+        projectId: "otpauth-9720a",
+        storageBucket: "otpauth-9720a.firebasestorage.app",
+        messagingSenderId: "479799291605",
+        appId: "1:479799291605:web:f7dc674475651d9ced3c5c",
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      let appVerifier;
+      let tempBooking = null;
+
+      // Mock employee database with phone numbers
+      const employeeDB = {
+        12345: "+919871698526",
+      };
+
+      function handleBooking(event) {
+        event.preventDefault();
+
+        const startTime = new Date(
+          document.getElementById("meetingStartTime").value
+        ).getTime();
+        const endTime = new Date(
+          document.getElementById("meetingEndTime").value
+        ).getTime();
+        const employeeId = document.getElementById("employeeId").value.trim();
+
+        if (!employeeDB[employeeId]) {
+          alert("Invalid Employee ID");
+          return;
+        }
+
+        if (endTime - startTime > 2 * 24 * 60 * 60 * 1000) {
+          alert("Booking duration cannot exceed 2 days.");
+          return;
+        }
+
+        if (endTime <= startTime) {
+          alert("End time must be after start time.");
+          return;
+        }
+
+        tempBooking = {
+          title: document.getElementById("meetingTitle").value,
+          employeeId: employeeId,
+          start: startTime,
+          end: endTime,
+          organizer: "Employee #" + employeeId,
+        };
+
+        document.getElementById("otpModal").classList.add("active");
+        sendOTP(employeeDB[employeeId]);
+      }
+
+      function sendOTP(phoneNumber) {
+        appVerifier = new firebase.auth.RecaptchaVerifier(
+          "recaptcha-container",
+          {
+            size: "invisible",
+            callback: () => {
+              firebase
+                .auth()
+                .signInWithPhoneNumber(phoneNumber, appVerifier)
+                .then((confirmationResult) => {
+                  window.confirmationResult = confirmationResult;
+                  document.getElementById("otpMessage").innerText =
+                    "OTP sent to registered phone number!";
+                })
+                .catch((error) => {
+                  document.getElementById(
+                    "otpMessage"
+                  ).innerText = `Error: ${error.message}`;
+                  appVerifier.clear();
+                });
+            },
+          }
+        );
+        appVerifier.verify();
+      }
+      // Update verifyOTP function
+      function verifyOTP() {
+        const otp = document.getElementById("otp").value;
+        if (!otp) {
+          document.getElementById("otpMessage").innerText = "Please enter OTP";
+          return;
+        }
+
+        window.confirmationResult
+          .confirm(otp)
+          .then((result) => {
+            document.getElementById("otpMessage").innerText =
+              "Verification successful!";
+            appVerifier.clear();
+
+            if (tempBooking) {
+              // Handle booking creation/editing
+              if (isEditing && originalMeeting) {
+                const index = roomData.schedule.findIndex(
+                  (m) => m === originalMeeting
+                );
+                if (index !== -1) {
+                  roomData.schedule.splice(index, 1, tempBooking);
+                }
+                isEditing = false;
+                originalMeeting = null;
+              } else {
+                roomData.schedule.push(tempBooking);
+              }
+              roomData.schedule.sort((a, b) => a.start - b.start);
+              localStorage.setItem("roomData", JSON.stringify(roomData)); // Add this line
+              saveBooking();
+            } else {
+              // Handle deletion
+              const index = roomData.schedule.findIndex(
+                (m) => m === selectedMeeting
+              );
+              if (index !== -1) {
+                roomData.schedule.splice(index, 1);
+                localStorage.setItem("roomData", JSON.stringify(roomData)); // Add this line
+                updateStatus();
+                renderSchedule();
+                calendar.refetchEvents();
+                closeMeetingModal();
+              }
+            }
+
+            document.getElementById("otpModal").classList.remove("active");
+          })
+          .catch((error) => {
+            document.getElementById("otpMessage").innerText =
+              "Invalid OTP. Please try again.";
+          });
+      }
+      // Rest of the existing script remains the same
+      let roomData = JSON.parse(localStorage.getItem("roomData"));
+      if (!roomData) {
+        roomData = {
+          schedule: [
+            {
+              title: "Team Sync-Up",
+              organizer: "John Doe",
+              start: Date.now() + 3600000,
+              end: Date.now() + 5400000,
+              employeeId: "12345",
+            },
+          ],
+        };
+        localStorage.setItem("roomData", JSON.stringify(roomData));
+      }
+      function updateDateTime() {
+        const now = new Date();
+        document.getElementById("currentDateTime").textContent =
+          now.toLocaleString();
+      }
+
+      function updateStatus() {
+        const statusBox = document.getElementById("statusBox");
+        const statusText = document.getElementById("currentStatus");
+        const timer = document.getElementById("timer");
+        const nextBookingDetails =
+          document.getElementById("nextBookingDetails");
+        const now = Date.now();
+
+        // Find current or next booking
+        let currentMeeting = null;
+        let nextMeeting = null;
+
+        roomData.schedule.sort((a, b) => a.start - b.start);
+
+        for (const meeting of roomData.schedule) {
+          if (now >= meeting.start && now <= meeting.end) {
+            currentMeeting = meeting;
+            break;
+          }
+          if (meeting.start > now && !nextMeeting) {
+            nextMeeting = meeting;
+          }
+        }
+
+        if (currentMeeting) {
+          statusBox.className = "status-box occupied";
+          statusText.textContent = "In Use";
+          timer.textContent = `Time remaining: ${formatTime(
+            (currentMeeting.end - now) / 1000
+          )}`;
+          nextBookingDetails.innerHTML = `
+                    <p>${currentMeeting.title}<br>
+                    Organized by: ${currentMeeting.organizer}<br>
+                    Ends at ${new Date(
+                      currentMeeting.end
+                    ).toLocaleTimeString()}</p>
+                `;
+        } else {
+          statusBox.className = "status-box available";
+          statusText.textContent = "Available";
+          if (nextMeeting) {
+            const duration = (nextMeeting.end - nextMeeting.start) / 60000; // Duration in minutes
+            timer.textContent = `Next booking in ${formatTime(
+              (nextMeeting.start - now) / 1000
+            )}`;
+            nextBookingDetails.innerHTML = `
+                        <p>${nextMeeting.title}<br>
+                        Organized by: ${nextMeeting.organizer}<br>
+                        ${new Date(nextMeeting.start).toLocaleTimeString()} - 
+                        ${new Date(nextMeeting.end).toLocaleTimeString()}<br>
+                        Duration: ${duration} minutes</p>
+                    `;
+          } else {
+            timer.textContent = "No upcoming bookings";
+            nextBookingDetails.innerHTML = "";
+          }
+        }
+      }
+
+      function formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        return `${hours}h ${minutes}m`;
+      }
+
+      function showScreen(screenId) {
+        document.querySelectorAll(".screen").forEach((screen) => {
+          screen.classList.remove("active");
+        });
+        document.getElementById(screenId).classList.add("active");
+
+        if (screenId === "scheduleScreen") {
+          renderSchedule();
+        }
+      }
+      function showMeetingDetails(meeting) {
+        selectedMeeting = meeting;
+        const modal = document.getElementById("meetingModal");
+        const duration = (meeting.end - meeting.start) / 60000;
+        document.getElementById("modalTitle").textContent = meeting.title;
+        document.getElementById("modalOrganizer").textContent =
+          meeting.organizer;
+        document.getElementById("modalTime").textContent = `${new Date(
+          meeting.start
+        ).toLocaleString()} - ${new Date(meeting.end).toLocaleString()}`;
+        document.getElementById(
+          "modalDuration"
+        ).textContent = `${duration} minutes`;
+        modal.classList.add("active");
+      }
+
+      function closeModal() {
+        document.getElementById("meetingModal").classList.remove("active");
+      }
+      function closeMeetingModal() {
+        document.getElementById("meetingModal").classList.remove("active");
+        selectedMeeting = null;
+      }
+      function handleDeleteMeeting() {
+        if (!selectedMeeting) return;
+
+        // Get organizer's phone from meeting data
+        const employeeId = selectedMeeting.employeeId;
+        if (!employeeId || !employeeDB[employeeId]) {
+          alert("Organizer verification failed");
+          return;
+        }
+
+        document.getElementById("otpModal").classList.add("active");
+        document.getElementById("otpMessage").innerText =
+          "Enter OTP to delete meeting";
+        tempBooking = null; // Flag for delete action
+        sendOTP(employeeDB[employeeId]);
+      }
+      function handleEditMeeting() {
+        if (!selectedMeeting) return;
+
+        // Populate booking form
+        document.getElementById("meetingTitle").value = selectedMeeting.title;
+        document.getElementById("employeeId").value =
+          selectedMeeting.employeeId;
+        document.getElementById("meetingStartTime").value = new Date(
+          selectedMeeting.start
+        )
+          .toISOString()
+          .slice(0, 16);
+        document.getElementById("meetingEndTime").value = new Date(
+          selectedMeeting.end
+        )
+          .toISOString()
+          .slice(0, 16);
+
+        originalMeeting = selectedMeeting;
+        isEditing = true;
+        closeMeetingModal();
+        showScreen("bookingScreen");
+      }
+
+      // Initialize
+      setInterval(() => {
+        updateDateTime();
+        updateStatus();
+      }, 1000);
+
+      updateDateTime();
+      updateStatus();
+      renderSchedule();
+    </script>
+  </body>
+</html>
